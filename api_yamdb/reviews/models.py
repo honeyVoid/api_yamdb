@@ -1,5 +1,8 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.contrib.auth import get_user_model
 from django.db import models
 # from django.utils.text import slugify
+User = get_user_model()  # заплатка до создания класса User
 
 
 class Genre(models.Model):
@@ -72,3 +75,78 @@ class GenreTitle(models.Model):
 
     def __str__(self):
         return f'{self.title} - {self.genre}'
+
+
+class Review(models.Model):
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Заголовок',
+        db_index=True,
+        null=False
+    )
+    text = models.TextField('Текст отзыва')
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews',
+        verbose_name='Автор отзыва',
+        db_index=True,
+        null=False
+    )
+    score = models.PositiveSmallIntegerField(
+        verbose_name='Оценка',
+        null=False,
+        validators=(
+            MinValueValidator(1, 'Минимальная оценка 1',),
+            MaxValueValidator(10, 'Максимальная оценка 10',)
+        ),
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
+    class Meta:
+        ordering = ('-pub_date',),
+        constarins = (
+            models.UniqueConstraint(
+                fields=('title', 'author',),
+            ),
+        )
+
+    def __str__(self):
+        return self.text[:15]
+
+
+class Comment(models.Model):
+    reviw = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Отзыв',
+        db_index=True,
+        null=False
+    )
+    text = models.TextField(null=False)
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments',
+        verbose_name='Автор комментария',
+        db_index=True,
+        null=False
+    )
+    pub_date = models.DateTimeField(
+        verbose_name='Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
+    class Meta:
+        ordering = ('-pub_date',)
+
+    def __str__(self):
+        return self.text[:15]

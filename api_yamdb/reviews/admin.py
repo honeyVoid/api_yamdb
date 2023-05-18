@@ -6,6 +6,7 @@ from reviews. models import (
     Category
 )
 
+
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
     list_display = (
