@@ -17,6 +17,10 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Category.objects.all()
     )
+    rating = serializers.IntegerField(
+        source='reviews__score__avg',
+        read_only=True
+    )
 
     class Meta:
         model = Title
