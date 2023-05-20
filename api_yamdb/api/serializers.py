@@ -35,6 +35,7 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         exclude = ('pk', )
+        lookup_field = 'slug'
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -42,6 +43,7 @@ class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         exclude = ('pk', )
+        lookup_field = 'slug'
 
 
 class ReviewSerializer(serializers.ModelSerializer):
