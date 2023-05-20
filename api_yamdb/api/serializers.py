@@ -16,6 +16,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
 
 
+# class TokenRequestSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         fields = ('username', 'confirmation_code')
+#         model = User
+        
 class TokenRequestSerializer(serializers.Serializer):
     username = serializers.CharField()
     confirmation_code = serializers.CharField()
