@@ -2,8 +2,13 @@ from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
 
 from rest_framework import viewsets, mixins, serializers, status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.views import APIView
+
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
+
 
 from reviews.models import User
 
@@ -49,30 +54,28 @@ class UserRegistrationViewSet(mixins.CreateModelMixin,
         )
 
 
-class TokenRequestViewSet(mixins.CreateModelMixin,
-                          viewsets.GenericViewSet):
-    queryset = User.objects.all()
-    serializer_class = TokenRequestSerializer
-
-    def perform_create(self, serializer):
-        username = serializer.validated_data.get('username')
-        confirmation_code = serializer.validated_data.get('confirmation_code') 
-
+@api_view(['POST'])
+def token_request(request):
+    serializer = TokenRequestSerializer(data=request.data)
+    if serializer.is_valid():
+        username = request.data.get('username')
+        confirmation_code = request.data.get('confirmation_code')
+        user = User.objects.get(username=username)
         try:
-            user = User.objects.get(username=username)
             if user.confirmation_code == confirmation_code:
-                refresh = RefreshToken.for_user(user)
+                access = AccessToken.for_user(user)
                 token = {
-                    'token': str(refresh.access_token)
+                    'token': str(access)
                 }
                 return Response(token, status=status.HTTP_200_OK)
             else:
                 return Response(
-                    {'Ошибка': 'Неверный код подтверждения'}, 
+                    {'Ошибка': 'Неверный код подтверждения '}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        except User.DoesNotExist:
+        except:
             return Response(
-                {'Ошибка': 'Пользователь не найден'}, 
+                {'Ошибка': 'Пользователь не найден'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+ 
