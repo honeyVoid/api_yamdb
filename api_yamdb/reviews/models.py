@@ -11,4 +11,9 @@ ROLE = (
 class User(AbstractUser):
     email = models.EmailField('email address', blank=True, unique=True)
     bio = models.TextField(blank=True)
-    role = models.CharField(max_length=16, blank=True, choices=ROLE)
+    role = models.CharField(
+        default='user',
+        max_length=16,
+        blank=True,
+        choices=ROLE
+    )
