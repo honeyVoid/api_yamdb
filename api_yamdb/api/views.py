@@ -26,7 +26,7 @@ def user_registration(request):
         raise serializers.ValidationError(
                 "Использование 'me' в качестве username запрещено."
             )
-    serializer.save()
+    serializer.save(role='user')
     user = get_object_or_404(User, username=username)
     email = user.email
     confirmation_code = default_token_generator.make_token(user)
