@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+
 
 from reviews.models import User
 
@@ -25,17 +25,6 @@ class TokenRequestSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    # username = serializers.CharField(
-    #     validators=(
-    #         UniqueValidator(queryset=User.objects.all()),
-    #     ),
-    #     required=True,
-    # )
-    # email = serializers.EmailField(
-    #     validators=(
-    #         UniqueValidator(queryset=User.objects.all()),
-    #     )
-    # )
 
     class Meta:
         fields = (
@@ -57,3 +46,4 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'role',
         )
         read_only_fields = ('role',)
+        model = User

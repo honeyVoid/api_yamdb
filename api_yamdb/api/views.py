@@ -2,7 +2,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 
-from rest_framework import (status, serializers, viewsets,
+from rest_framework import (status, viewsets,
                             pagination, permissions)
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
