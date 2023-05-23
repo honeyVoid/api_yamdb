@@ -5,6 +5,15 @@ from reviews.models import User
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
+
+    username = serializers.CharField()
+
+    def validate_username(self, value):
+        username = value.lower()
+        if username == 'me':
+            raise serializers.ValidationError(f'Имя "{value}" не доступно.')
+        return value
+
     class Meta:
         fields = ('email', 'username')
         model = User

@@ -23,13 +23,11 @@ def user_registration(request):
     '''
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    username = serializer.validated_data.get('username')
-    if username == 'me':
-        raise serializers.ValidationError(
-            "Использование 'me' в качестве username запрещено."
-        )
     serializer.save()
-    user = get_object_or_404(User, username=username)
+    user = get_object_or_404(
+        User,
+        username=serializer.validated_data.get('username')
+    )
     email = user.email
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
@@ -42,8 +40,8 @@ def user_registration(request):
     )
     return Response(
         {
-            "username": str(user),
-            "email": str(email)
+            'username': str(user),
+            'email': str(email)
         },
         status=status.HTTP_201_CREATED
     )
@@ -57,11 +55,10 @@ def token_request(request):
     confirmation_code = serializer.validated_data['confirmation_code']
     user = get_object_or_404(User, username=username)
     if default_token_generator.check_token(user, confirmation_code):
-        access = AccessToken.for_user(user)
-        token = {
-            'token': str(access)
-        }
-        return Response(token, status=status.HTTP_200_OK)
+        return Response(
+            {'Token': str(AccessToken.for_user(user))},
+            status=status.HTTP_200_OK
+        )
     return Response(
         {'Ошибка': 'Неверный код подтверждения '},
         status=status.HTTP_400_BAD_REQUEST
