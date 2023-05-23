@@ -25,17 +25,17 @@ class TokenRequestSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        validators=(
-            UniqueValidator(queryset=User.objects.all()),
-        ),
-        required=True,
-    )
-    email = serializers.EmailField(
-        validators=(
-            UniqueValidator(queryset=User.objects.all()),
-        )
-    )
+    # username = serializers.CharField(
+    #     validators=(
+    #         UniqueValidator(queryset=User.objects.all()),
+    #     ),
+    #     required=True,
+    # )
+    # email = serializers.EmailField(
+    #     validators=(
+    #         UniqueValidator(queryset=User.objects.all()),
+    #     )
+    # )
 
     class Meta:
         fields = (
