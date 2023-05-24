@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from reviews. models import (
+from reviews.models import (
     Title,
     Genre,
-    Category
+    Category,
+		User,
 )
 
 
@@ -38,3 +39,5 @@ class AdminCategory(admin.ModelAdmin):
     )
     list_filter = ('name',)
     search_fields = ('name', )
+
+admin.site.register(User)
