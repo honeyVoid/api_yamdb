@@ -1,17 +1,112 @@
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, action
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 
+
 from rest_framework import (status, viewsets,
-                            pagination, permissions)
-from rest_framework.decorators import api_view, action
-from rest_framework.response import Response
+                            pagination, permissions,
+													  viewsets, mixins)
 
-from rest_framework_simplejwt.tokens import AccessToken
-from reviews.models import User
 
-from .serializers import (TokenRequestSerializer, UserRegistrationSerializer,
-                          UserSerializer, UserUpdateSerializer)
+from reviews.models import (
+    Category,
+    Genre,
+    Review,
+    Title,
+		User,
+)
+from api.serializers import (
+    CategorySerializer,
+    CommentSerializer,
+    GenreSerializer,
+    ReviewSerializer,
+    TitleSerializer,
+		TokenRequestSerializer,
+		UserRegistrationSerializer,
+		UserSerializer,
+		UserUpdateSerializer,
+
+)
+from api.filters import TitleFilter
+
+
+class CDULViewsSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    ...
+
+
+class TitleVieSet(viewsets.ModelViewSet):
+    queryset = Title.objects.all()
+    serializer_class = TitleSerializer
+    # permission_classes = (...)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+
+class GenreViewSet(CDULViewsSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = (...)
+    filter_backends = (filters.SearchFilter)
+    search_fields = ('name',)
+    pagination_class = (...)
+
+
+class CategoryViewSet(CDULViewsSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (...)
+    filter_backends = (filters.SearchFilter)
+    search_fields = ('name',)
+    pagination_class = (...)
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    pagination_class = (...)
+    permission_classes = (...)
+
+    def get_queryset(self):
+        title = get_object_or_404(
+            Title,
+            pk=self.kwargs['title_id']
+        )
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title = get_object_or_404(
+            Title,
+            pk=self.kwargs['title_id']
+        )
+        serializer.save(author=self.request.user, title=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = (...)
+
+    def get_queryset(self):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs['review_id']
+        )
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(
+            Review,
+            pk=self.kwargs['review_id']
+        )
+        serializer.save(author=self.request.user, review=review)
 
 
 @api_view(['POST'])
@@ -91,3 +186,4 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
