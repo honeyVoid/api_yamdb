@@ -1,6 +1,6 @@
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
@@ -9,15 +9,19 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import (status, viewsets,
                             pagination, permissions,
-													  viewsets, mixins)
-
-
+                            viewsets, mixins,
+                            filters, serializers)
+from api.permissions import (
+    IsAdmin,
+    IsAdminModeratorOwnerOrReadOnly,
+    IsAdminOrReadOnly
+)
 from reviews.models import (
     Category,
     Genre,
     Review,
     Title,
-		User,
+    User,
 )
 from api.serializers import (
     CategorySerializer,
@@ -25,10 +29,11 @@ from api.serializers import (
     GenreSerializer,
     ReviewSerializer,
     TitleSerializer,
-		TokenRequestSerializer,
-		UserRegistrationSerializer,
-		UserSerializer,
-		UserUpdateSerializer,
+    TokenRequestSerializer,
+    UserRegistrationSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+    ReadOnlyTitleSerializer
 
 )
 from api.filters import TitleFilter
@@ -44,36 +49,41 @@ class CDULViewsSet(
     ...
 
 
-class TitleVieSet(viewsets.ModelViewSet):
+class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
-    # permission_classes = (...)
-    filter_backends = (DjangoFilterBackend,)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "list"):
+            return ReadOnlyTitleSerializer
+        return TitleSerializer
 
 
 class GenreViewSet(CDULViewsSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (...)
-    filter_backends = (filters.SearchFilter)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-    pagination_class = (...)
+    pagination_class = pagination.LimitOffsetPagination
 
 
 class CategoryViewSet(CDULViewsSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (...)
-    filter_backends = (filters.SearchFilter)
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
-    pagination_class = (...)
+    pagination_class = pagination.LimitOffsetPagination
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    pagination_class = (...)
-    permission_classes = (...)
+    pagination_class = pagination.LimitOffsetPagination
+    permission_classes = (IsAdminModeratorOwnerOrReadOnly,)
 
     def get_queryset(self):
         title = get_object_or_404(
@@ -92,7 +102,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
-    permission_classes = (...)
+    permission_classes = (IsAdminModeratorOwnerOrReadOnly,)
 
     def get_queryset(self):
         review = get_object_or_404(
@@ -110,6 +120,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def user_registration(request):
     '''
     Получает на вход username и email, после чего генерирует
@@ -118,6 +129,8 @@ def user_registration(request):
     '''
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
+    if serializer.validated_data.get('username').lower() == 'me':
+        raise serializers.ValidationError('Имя "me" не доступно.')
     serializer.save()
     user = get_object_or_404(
         User,
@@ -138,11 +151,12 @@ def user_registration(request):
             'username': str(user),
             'email': str(email)
         },
-        status=status.HTTP_201_CREATED
+        status=status.HTTP_200_OK
     )
 
 
 @api_view(['POST'])
+@permission_classes([permissions.AllowAny])
 def token_request(request):
     serializer = TokenRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -161,10 +175,11 @@ def token_request(request):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = pagination.LimitOffsetPagination
-    # permission_classes = (IsAdmin,)
+    permission_classes = (IsAdmin,)
 
     @action(['get', 'patch'],
             detail=False,
@@ -175,15 +190,14 @@ class UserViewSet(viewsets.ModelViewSet):
         user = request.user
         if request.method == 'GET':
             serializer = self.get_serializer(user)
-            return Response(serializer.data, status=200)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'PATCH':
             serializer = self.get_serializer(
                 user,
                 data=request.data,
                 partial=True
             )
-            serializer.is_valid()
+            serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-

@@ -1,3 +1,4 @@
+from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from reviews. models import (
     Category,
@@ -11,29 +12,22 @@ from reviews. models import (
 
 class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
-        slug_field='slug',
-        many=True,
-        queryset=Genre.objects.all()
+        slug_field='slug', many=True, queryset=Genre.objects.all()
     )
     category = serializers.SlugRelatedField(
-        slug_field='slug',
-        queryset=Category.objects.all()
-    )
-    rating = serializers.IntegerField(
-        source='reviews__score__avg',
-        read_only=True
+        slug_field='slug', queryset=Category.objects.all()
     )
 
     class Meta:
         model = Title
-        exclude = ('pk', )
+        fields = '__all__'
 
 
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        exclude = ('pk', )
+        exclude = ('id', )
         lookup_field = 'slug'
 
 
@@ -41,8 +35,22 @@ class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Genre
-        exclude = ('pk', )
+        exclude = ('id', )
         lookup_field = 'slug'
+
+
+class ReadOnlyTitleSerializer(serializers.ModelSerializer):
+    rating = serializers.IntegerField(
+        source='reviews__score__avg', read_only=True
+    )
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'genre', 'category'
+        )
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -83,17 +91,11 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
+        fields = '__all__'
         read_only_fields = ('review', )
 
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
-
-    username = serializers.CharField()
-
-    def validate_username(self, value):
-        username = value.lower()
-        if username == 'me':
-            raise serializers.ValidationError(f'Имя "{value}" не доступно.')
-        return value
 
     class Meta:
         fields = ('email', 'username')
@@ -112,6 +114,9 @@ class UserSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'role',
+            'first_name',
+            'last_name',
+            'bio'
         )
         model = User
 
@@ -121,6 +126,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         fields = (
             'username',
+            'email',
             'first_name',
             'last_name',
             'bio',
@@ -128,7 +134,3 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('role',)
         model = User
-
-
-
-

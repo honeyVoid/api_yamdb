@@ -1,9 +1,8 @@
 import os
+
 from datetime import timedelta
 
-
 from pathlib import Path
-import os
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,7 +21,6 @@ ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'reviews.User'
 
 INSTALLED_APPS = [
-    'reviews.apps.ReviewsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -33,7 +31,7 @@ INSTALLED_APPS = [
     'api.apps.ApiConfig',
     'rest_framework',
     'django_filters',
-		'rest_framework_simplejwt',
+    'rest_framework_simplejwt',
 ]
 
 MIDDLEWARE = [

@@ -35,7 +35,6 @@ class User(AbstractUser):
             return True
 
 
-
 class Genre(models.Model):
     """Модель жанра произведения."""
     name = models.CharField(
@@ -141,7 +140,7 @@ class Review(models.Model):
     )
 
     class Meta:
-        ordering = ('-pub_date',),
+        ordering = ['-pub_date']
         constraints = (
             models.UniqueConstraint(
                 fields=('title', 'author',),
