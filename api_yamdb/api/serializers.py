@@ -1,4 +1,4 @@
-from rest_framework.validators import UniqueValidator
+from django.core.validators import MaxLengthValidator
 from rest_framework import serializers
 from reviews. models import (
     Category,
@@ -122,6 +122,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(validators=[MaxLengthValidator(150)])
 
     class Meta:
         fields = (
@@ -132,5 +133,5 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'bio',
             'role',
         )
-        read_only_fields = ('role',)
+        read_only_fields = ('role', 'username')
         model = User

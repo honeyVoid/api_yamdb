@@ -39,45 +39,57 @@ from api.serializers import (
 from api.filters import TitleFilter
 
 
-class CDULViewsSet(
+class CustomViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
-    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    ...
+    pass
+
+
+class PartialUpdateModelMixin(mixins.UpdateModelMixin):
+    """
+    Миксин, позволяющий только частичное обновление через PATCH.
+    Исключает метод PUT.
+    """
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all()
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
-        if self.action in ("retrieve", "list"):
+        if self.action in ('retrieve', 'list'):
             return ReadOnlyTitleSerializer
         return TitleSerializer
 
 
-class GenreViewSet(CDULViewsSet):
+class GenreViewSet(CustomViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     pagination_class = pagination.LimitOffsetPagination
+    lookup_field = 'slug'
 
 
-class CategoryViewSet(CDULViewsSet):
+class CategoryViewSet(CustomViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
     pagination_class = pagination.LimitOffsetPagination
+    lookup_field = 'slug'
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -174,12 +186,18 @@ def token_request(request):
     )
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(
+    CustomViewSet,
+    PartialUpdateModelMixin,
+    mixins.RetrieveModelMixin,
+):
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = pagination.PageNumberPagination
     permission_classes = (IsAdmin,)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ('username',)
 
     @action(['get', 'patch'],
             detail=False,

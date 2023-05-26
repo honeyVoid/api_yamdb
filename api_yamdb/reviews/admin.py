@@ -4,18 +4,24 @@ from reviews.models import (
     Title,
     Genre,
     Category,
-		User,
+    User,
 )
 
 
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
+
     list_display = (
         'name',
         'category',
         'rating',
-
+        'display_genres'
     )
+
+    def display_genres(self, obj):
+        return ", ".join([genre.name for genre in obj.genre.all()])
+    display_genres.short_description = 'Genres'
+
     list_filter = ('name',)
     search_fields = ('name',)
 
@@ -39,5 +45,6 @@ class AdminCategory(admin.ModelAdmin):
     )
     list_filter = ('name',)
     search_fields = ('name', )
+
 
 admin.site.register(User)

@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.contrib.auth import get_user_model
+
 from django.db import models
 
 
@@ -33,6 +33,9 @@ class User(AbstractUser):
     def is_moderator(self):
         if self.role == MODERATOR:
             return True
+
+    class Meta:
+        ordering = ['username']
 
 
 class Genre(models.Model):
@@ -90,6 +93,11 @@ class Title(models.Model):
     )
     year = models.IntegerField(
         verbose_name='Дата релиза.'
+    )
+    description = models.CharField(
+        max_length=254,
+        blank=True,
+        null=True
     )
 
 
