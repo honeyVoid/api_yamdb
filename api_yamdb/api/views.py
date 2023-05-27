@@ -131,23 +131,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
-def user_registration(request):
-    '''
-    Получает на вход username и email, после чего генерирует
-    confirmation_code для последующей отправки на почту с целью
-    генерации токена.
-    '''
-    serializer = UserRegistrationSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    if serializer.validated_data.get('username').lower() == 'me':
-        raise serializers.ValidationError('Имя "me" не доступно.')
-    serializer.save()
-    user = get_object_or_404(
-        User,
-        username=serializer.validated_data.get('username')
-    )
+def send_confirmation_code(user):
     email = user.email
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
@@ -158,13 +142,36 @@ def user_registration(request):
         'confirmation_code@yamdb.com',
         [email, ]
     )
-    return Response(
-        {
-            'username': str(user),
-            'email': str(email)
-        },
-        status=status.HTTP_200_OK
-    )
+
+
+@api_view(['POST'])
+@permission_classes([permissions.AllowAny])
+def user_registration(request):
+    '''
+    Получает на вход username и email, после чего генерирует
+    confirmation_code для последующей отправки на почту с целью
+    генерации токена.
+    '''
+    serializer = UserRegistrationSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    username = serializer.validated_data.get('username')
+    email = serializer.validated_data.get('email')
+    if username.lower() == 'me':
+        raise serializers.ValidationError('Имя "me" не доступно.')
+    else:
+        user, created = User.objects.get_or_create(
+            username=username,
+            email=email
+            )
+        if not created or created:
+            send_confirmation_code(user)
+            return Response(
+                {
+                    'username': str(user),
+                    'email': str(email)
+                },
+                status=status.HTTP_200_OK
+            )
 
 
 @api_view(['POST'])
@@ -191,6 +198,7 @@ class UserViewSet(
     PartialUpdateModelMixin,
     mixins.RetrieveModelMixin,
 ):
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer

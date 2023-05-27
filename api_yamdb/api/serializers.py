@@ -1,4 +1,4 @@
-from django.core.validators import MaxLengthValidator
+from django.core.validators import MaxLengthValidator, RegexValidator
 from rest_framework import serializers
 from reviews. models import (
     Category,
@@ -95,11 +95,12 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ('review', )
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        fields = ('email', 'username')
-        model = User
+class UserRegistrationSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=150,
+        validators=[RegexValidator(r'^[\w.@+-]+\Z')]
+    )
+    email = serializers.EmailField(max_length=254)
 
 
 class TokenRequestSerializer(serializers.Serializer):
