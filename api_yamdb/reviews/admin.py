@@ -8,9 +8,11 @@ from reviews.models import (
     Review
 )
 
+
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):

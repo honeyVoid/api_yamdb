@@ -1,5 +1,4 @@
 from django.core.validators import MaxLengthValidator, RegexValidator
-from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from reviews. models import (
     Category,
@@ -99,16 +98,29 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=150,
-        validators=[RegexValidator(r'^[\w.@+-]+\Z'),
-                    ]
+        validators=[RegexValidator(r'^[\w.@+-]+\Z')]
     )
-    email = serializers.EmailField(
-        max_length=254,
-    )
+    email = serializers.EmailField(max_length=254)
+
+    def validate(self, attrs):
+        emails = User.objects.filter(
+            email=attrs.get('email')
+        ).exists()
+        users = User.objects.filter(
+            username=attrs.get('username')
+        ).exists()
+        if (emails and not users) or (users and not emails):
+            raise serializers.ValidationError(
+                'This email is already registered.',
+                code='email_registered'
+            )
+        return attrs
 
     def validate_username(self, value):
-        if value.lower() == "me":
-            raise serializers.ValidationError("Username 'me' is not valid")
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Username "me" is not valid'
+            )
         return value
 
 

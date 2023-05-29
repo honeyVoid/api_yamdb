@@ -10,11 +10,14 @@ conn = connections['default']
 cursor = conn.cursor()
 
 
-with open('static/data/genre_title.csv', 'r', newline='', encoding='utf-8') as csvfile:
+with open(
+    'static/data/genre_title.csv', 'r', newline='', encoding='utf-8'
+) as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         cursor.execute(
-            'INSERT INTO reviews_genretitle (genre_id, title_id) VALUES (%s, %s)',
+            'INSERT INTO reviews_genretitle (genre_id, title_id) \
+                VALUES (%s, %s)',
             (row['title_id'], row['genre_id'])
         )
 
