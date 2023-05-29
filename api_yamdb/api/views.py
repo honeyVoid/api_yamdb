@@ -5,12 +5,13 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 
 
 from rest_framework import (status, viewsets,
                             pagination, permissions,
                             viewsets, mixins,
-                            filters, serializers)
+                            filters,)
 from api.permissions import (
     IsAdmin,
     IsAdminModeratorOwnerOrReadOnly,
@@ -48,19 +49,21 @@ class CustomViewSet(
     pass
 
 
-class PartialUpdateModelMixin(mixins.UpdateModelMixin):
-    """
-    Миксин, позволяющий только частичное обновление через PATCH.
-    Исключает метод PUT.
-    """
+# class PartialUpdateModelMixin(mixins.UpdateModelMixin):
+#     """
+#     Миксин, позволяющий только частичное обновление через PATCH.
+#     Исключает метод PUT.
+#     """
 
-    def partial_update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
+#     def partial_update(self, request, *args, **kwargs):
+#         kwargs['partial'] = True
+#         return self.update(request, *args, **kwargs)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.all()
+    queryset = Title.objects.all().annotate(
+        Avg("reviews__score")
+    ).order_by("name")
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -141,12 +144,9 @@ def user_registration(request):
     '''
     serializer = UserRegistrationSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-    if serializer.validated_data.get('username').lower() == 'me':
-        raise serializers.ValidationError('Имя "me" не доступно.')
-    serializer.save()
-    user = get_object_or_404(
-        User,
-        username=serializer.validated_data.get('username')
+    user, _ = User.objects.get_or_create(
+        username=serializer.validated_data.get('username'),
+        email=serializer.validated_data.get('email')
     )
     email = user.email
     confirmation_code = default_token_generator.make_token(user)
@@ -168,7 +168,7 @@ def user_registration(request):
 
 
 @api_view(['POST'])
-@permission_classes([permissions.AllowAny])
+# @permission_classes([permissions.AllowAny])
 def token_request(request):
     serializer = TokenRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -186,11 +186,8 @@ def token_request(request):
     )
 
 
-class UserViewSet(
-    CustomViewSet,
-    PartialUpdateModelMixin,
-    mixins.RetrieveModelMixin,
-):
+class UserViewSet(viewsets.ModelViewSet):
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'username'
     queryset = User.objects.all()
     serializer_class = UserSerializer

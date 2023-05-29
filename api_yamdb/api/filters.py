@@ -7,16 +7,24 @@ from reviews.models import (
 
 class TitleFilter(rest_framework.FilterSet):
     name = rest_framework.CharFilter(
-        lookup_expr='icontains'
+        lookup_expr='icontains',
+        field_name='name'
     )
     genre = rest_framework.CharFilter(
-        lookup_expr='icontains'
+        lookup_expr='icontains',
+        field_name='genre__slug'
     )
     category = rest_framework.CharFilter(
+        field_name='category__slug',
         lookup_expr='icontains'
     )
     year = rest_framework.CharFilter(
-        lookup_expr='icontains'
+        lookup_expr='icontains',
+        field_name='year'
+    )
+    description = rest_framework.CharFilter(
+        lookup_expr='icontains',
+        field_name='description'
     )
 
     class Meta:
@@ -25,5 +33,6 @@ class TitleFilter(rest_framework.FilterSet):
             'name',
             'genre',
             'category',
-            'year'
+            'year',
+            'description',
         )

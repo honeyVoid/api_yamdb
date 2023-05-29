@@ -5,8 +5,12 @@ from reviews.models import (
     Genre,
     Category,
     User,
+    Review
 )
 
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    pass
 
 @admin.register(Title)
 class TitleAdmin(admin.ModelAdmin):
@@ -15,7 +19,8 @@ class TitleAdmin(admin.ModelAdmin):
         'name',
         'category',
         'rating',
-        'display_genres'
+        'display_genres',
+        'description'
     )
 
     def display_genres(self, obj):

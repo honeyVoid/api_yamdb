@@ -1,4 +1,5 @@
-from django.core.validators import MaxLengthValidator
+from django.core.validators import MaxLengthValidator, RegexValidator
+from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from reviews. models import (
     Category,
@@ -49,7 +50,7 @@ class ReadOnlyTitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'genre', 'category'
+            'id', 'name', 'year', 'rating', 'genre', 'category', 'description'
         )
 
 
@@ -95,11 +96,20 @@ class CommentSerializer(serializers.ModelSerializer):
         read_only_fields = ('review', )
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
+class UserRegistrationSerializer(serializers.Serializer):
+    username = serializers.CharField(
+        max_length=150,
+        validators=[RegexValidator(r'^[\w.@+-]+\Z'),
+                    ]
+    )
+    email = serializers.EmailField(
+        max_length=254,
+    )
 
-    class Meta:
-        fields = ('email', 'username')
-        model = User
+    def validate_username(self, value):
+        if value.lower() == "me":
+            raise serializers.ValidationError("Username 'me' is not valid")
+        return value
 
 
 class TokenRequestSerializer(serializers.Serializer):
@@ -122,7 +132,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(validators=[MaxLengthValidator(150)])
+    username = serializers.CharField(
+        validators=[
+            MaxLengthValidator(150),
+            RegexValidator(r'^[\w.@+-]+\Z')
+        ]
+    )
 
     class Meta:
         fields = (

@@ -100,6 +100,9 @@ class Title(models.Model):
         null=True
     )
 
+    def __str__(self):
+        return self.name
+
 
 class GenreTitle(models.Model):
     title = models.ForeignKey(
@@ -161,7 +164,7 @@ class Review(models.Model):
 
 
 class Comment(models.Model):
-    reviw = models.ForeignKey(
+    review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
         related_name='comments',
