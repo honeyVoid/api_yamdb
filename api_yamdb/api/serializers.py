@@ -1,6 +1,10 @@
+from django.conf import settings
+
 from django.core.validators import MaxLengthValidator, RegexValidator
+# from rest_framework.validators import UniqueTogetherValidator
 from rest_framework import serializers
-from reviews. models import (
+
+from reviews.models import (
     Category,
     Comment,
     Genre,
@@ -8,6 +12,9 @@ from reviews. models import (
     Title,
     User,
 )
+
+RISTRICTED_SIMBOLS = r'^[\w.@+-]+\Z'
+# спец-символы которые не должны быт в username
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -98,28 +105,34 @@ class CommentSerializer(serializers.ModelSerializer):
 class UserRegistrationSerializer(serializers.Serializer):
     username = serializers.CharField(
         max_length=150,
-        validators=[RegexValidator(r'^[\w.@+-]+\Z')]
+        validators=[RegexValidator(RISTRICTED_SIMBOLS)]
     )
     email = serializers.EmailField(max_length=254)
 
     def validate(self, attrs):
-        emails = User.objects.filter(
+        email = User.objects.filter(
             email=attrs.get('email')
         ).exists()
         users = User.objects.filter(
             username=attrs.get('username')
         ).exists()
-        if (emails and not users) or (users and not emails):
+        if (email and not users):
             raise serializers.ValidationError(
                 'This email is already registered.',
                 code='email_registered'
             )
+        if users and not email:
+            raise serializers.ValidationError(
+                'This username is already registered.',
+                code='user_registered'
+            )
+
         return attrs
 
     def validate_username(self, value):
-        if value.lower() == 'me':
+        if value.lower() == settings.RISTRECTED_USERNAME:
             raise serializers.ValidationError(
-                'Username "me" is not valid'
+                f'Username {settings.RISTRECTED_USERNAME} is not valid'
             )
         return value
 

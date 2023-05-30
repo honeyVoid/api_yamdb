@@ -1,17 +1,19 @@
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, action, permission_classes
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.db.models import Avg
 
-
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, action
 from rest_framework import (status, viewsets,
                             pagination, permissions,
                             viewsets, mixins,
                             filters,)
+from django_filters.rest_framework import DjangoFilterBackend
+
+
 from api.permissions import (
     IsAdmin,
     IsAdminModeratorOwnerOrReadOnly,
@@ -49,22 +51,10 @@ class CustomViewSet(
     pass
 
 
-# class PartialUpdateModelMixin(mixins.UpdateModelMixin):
-#     """
-#     Миксин, позволяющий только частичное обновление через PATCH.
-#     Исключает метод PUT.
-#     """
-
-#     def partial_update(self, request, *args, **kwargs):
-#         kwargs['partial'] = True
-#         return self.update(request, *args, **kwargs)
-
-
 class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.all().annotate(
-        Avg("reviews__score")
-    ).order_by("name")
-    serializer_class = TitleSerializer
+        Avg('reviews__score')
+    )
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = TitleFilter
@@ -103,14 +93,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         title = get_object_or_404(
             Title,
-            pk=self.kwargs['title_id']
+            pk=self.kwargs.get('title_id')
         )
         return title.reviews.all()
 
     def perform_create(self, serializer):
         title = get_object_or_404(
             Title,
-            pk=self.kwargs['title_id']
+            pk=self.kwargs.get('title_id')
         )
         serializer.save(author=self.request.user, title=title)
 
@@ -122,20 +112,19 @@ class CommentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         review = get_object_or_404(
             Review,
-            pk=self.kwargs['review_id']
+            pk=self.kwargs.get('review_id')
         )
         return review.comments.all()
 
     def perform_create(self, serializer):
         review = get_object_or_404(
             Review,
-            pk=self.kwargs['review_id']
+            pk=self.kwargs.get('review_id')
         )
         serializer.save(author=self.request.user, review=review)
 
 
-@api_view(['POST'])
-@permission_classes([permissions.AllowAny])
+@api_view(('POST',))
 def user_registration(request):
     '''
     Получает на вход username и email, после чего генерирует
@@ -151,11 +140,11 @@ def user_registration(request):
     email = user.email
     confirmation_code = default_token_generator.make_token(user)
     send_mail(
-        'Код подтверждения API YamDB',
+        settings.MAIL_THEME,
         f'''
-Вы зарегистрировались на YamDB под ником: {user}.
-Ваш код подтверждения: {confirmation_code}''',
-        'confirmation_code@yamdb.com',
+{settings.ABOUT_REGISTRATION_MESSAGE}{user}.
+{settings.CONFIRMATION_CODE_MESSAGE}{confirmation_code}''',
+        f'{settings.EMAIL_SEND_FROM}',
         [email, ]
     )
     return Response(
@@ -167,8 +156,7 @@ def user_registration(request):
     )
 
 
-@api_view(['POST'])
-# @permission_classes([permissions.AllowAny])
+@api_view(('POST',))
 def token_request(request):
     serializer = TokenRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

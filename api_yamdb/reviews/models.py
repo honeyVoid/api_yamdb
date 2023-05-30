@@ -3,14 +3,16 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 from django.db import models
 
+from reviews.validator import yaer_validator
+
 
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
 ROLES = [
-    (ADMIN, 'Administrator'),
-    (MODERATOR, 'Moderator'),
-    (USER, 'User'),
+    (ADMIN, ADMIN),
+    (MODERATOR, MODERATOR),
+    (USER, USER),
 ]
 
 
@@ -26,16 +28,14 @@ class User(AbstractUser):
 
     @property
     def is_admin(self):
-        if self.role == ADMIN:
-            return True
+        return self.role == ADMIN
 
     @property
     def is_moderator(self):
-        if self.role == MODERATOR:
-            return True
+        return self.role == MODERATOR
 
     class Meta:
-        ordering = ['username']
+        ordering = ('username',)
 
 
 class Genre(models.Model):
@@ -80,25 +80,36 @@ class Title(models.Model):
         verbose_name='Категория произведения.',
         default='Категория не выбрана.',
         on_delete=models.SET_NULL,
+        related_name='category'
     )
     genre = models.ManyToManyField(
         Genre,
         verbose_name='Жанр произведения.',
         through='GenreTitle'
     )
-    rating = models.IntegerField(
+    rating = models.PositiveSmallIntegerField(
         verbose_name='Рейтинг произведения.',
         null=True,
-        default=None
+        default=None,
+        validators=(
+            MaxValueValidator(
+                10,
+                'Средняя оценка не можожет быть больше 10.',
+            ),
+        ),
     )
     year = models.IntegerField(
-        verbose_name='Дата релиза.'
+        verbose_name='Дата релиза.',
+        validators=(yaer_validator,)
     )
     description = models.CharField(
         max_length=254,
         blank=True,
         null=True
     )
+
+    class Meta:
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
@@ -108,11 +119,13 @@ class GenreTitle(models.Model):
     title = models.ForeignKey(
         Title,
         verbose_name='Произведение',
-        on_delete=models.CASCADE)
+        on_delete=models.CASCADE,
+        related_name='title_GenreTitle')
     genre = models.ForeignKey(
         Genre,
         verbose_name='Жанр',
-        on_delete=models.CASCADE)
+        on_delete=models.CASCADE,
+        related_name='genre_GenreTitle')
 
     def __str__(self):
         return f'{self.title} - {self.genre}'
@@ -125,7 +138,7 @@ class Review(models.Model):
         related_name='reviews',
         verbose_name='Заголовок',
         db_index=True,
-        null=False
+        null=False,
     )
     text = models.TextField('Текст отзыва')
     author = models.ForeignKey(
@@ -151,7 +164,7 @@ class Review(models.Model):
     )
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         constraints = (
             models.UniqueConstraint(
                 fields=('title', 'author',),
