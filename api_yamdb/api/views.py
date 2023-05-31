@@ -184,7 +184,7 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ('username',)
 
-    @action(['get', 'patch'],
+    @action(('get', 'patch'),
             detail=False,
             url_path='me',
             permission_classes=(permissions.IsAuthenticated,),

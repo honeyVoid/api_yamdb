@@ -9,11 +9,11 @@ from reviews.validator import yaer_validator
 ADMIN = 'admin'
 MODERATOR = 'moderator'
 USER = 'user'
-ROLES = [
+ROLES = (
     (ADMIN, ADMIN),
     (MODERATOR, MODERATOR),
     (USER, USER),
-]
+)
 
 
 class User(AbstractUser):
@@ -80,7 +80,7 @@ class Title(models.Model):
         verbose_name='Категория произведения.',
         default='Категория не выбрана.',
         on_delete=models.SET_NULL,
-        related_name='category'
+        related_name='title'
     )
     genre = models.ManyToManyField(
         Genre,

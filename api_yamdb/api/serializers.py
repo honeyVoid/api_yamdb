@@ -1,7 +1,7 @@
 from django.conf import settings
 
 from django.core.validators import MaxLengthValidator, RegexValidator
-# from rest_framework.validators import UniqueTogetherValidator
+
 from rest_framework import serializers
 
 from reviews.models import (
@@ -158,10 +158,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(
-        validators=[
+        validators=(
             MaxLengthValidator(150),
-            RegexValidator(r'^[\w.@+-]+\Z')
-        ]
+            RegexValidator(RISTRICTED_SIMBOLS),
+        )
     )
 
     class Meta:
