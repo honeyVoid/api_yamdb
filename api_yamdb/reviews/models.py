@@ -80,7 +80,7 @@ class Title(models.Model):
         verbose_name='Категория произведения.',
         default='Категория не выбрана.',
         on_delete=models.SET_NULL,
-        related_name='title'
+        related_name='titles'
     )
     genre = models.ManyToManyField(
         Genre,
@@ -120,12 +120,12 @@ class GenreTitle(models.Model):
         Title,
         verbose_name='Произведение',
         on_delete=models.CASCADE,
-        related_name='title_GenreTitle')
+        related_name='genres')
     genre = models.ForeignKey(
         Genre,
         verbose_name='Жанр',
         on_delete=models.CASCADE,
-        related_name='genre_GenreTitle')
+        related_name='titles')
 
     def __str__(self):
         return f'{self.title} - {self.genre}'

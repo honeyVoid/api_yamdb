@@ -142,6 +142,4 @@ RISTRECTED_USERNAME = 'me'
 MAIL_THEME = 'Код подтверждения API YamDB'
 ABOUT_REGISTRATION_MESSAGE = 'Вы зарегистрировались на YamDB под ником: '
 CONFIRMATION_CODE_MESSAGE = 'Ваш код подтверждения: '
-EMAIL_SEND_FROM = {
-    'confirm_code': 'confirmation_code@yamdb.com'
-}
+EMAIL_SEND_FROM = 'confirmation_code@yamdb.com'
